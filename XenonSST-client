@@ -1,0 +1,29 @@
+// HackFast Group: Xenon client side code for the SST binary led water sensor
+// SST: Red (3v3); Green (GRN); Blue (A0)
+// Note: D7 (blue led light) will light when water=true (analogRead(sr1) < 100)
+
+int sr1 = A0;
+int analogValue = 0;
+int sr2 = D7;
+
+void setup() {
+    pinMode(sr1, INPUT);
+    pinMode(sr2, OUTPUT);
+    
+    Serial.begin(9600);
+   // Particle.publish("SST:");
+}
+
+ void loop() {
+   analogValue = analogRead(sr1);
+   //Particle.publish("4value", analogValue); 
+    delay(1000);
+    Serial.print(sr1);
+    if(analogValue < 100){
+        digitalWrite(D7, HIGH);   
+    }else{
+        digitalWrite(D7, LOW);
+    }
+    delay(7000);
+   // Particle.publish("SST:", digitalValue, PRIVATE);
+}
