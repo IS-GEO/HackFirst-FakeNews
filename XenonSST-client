@@ -1,29 +1,71 @@
 // HackFast Group: Xenon client side code for the SST binary led water sensor
+// isgeocommunity@gmail.com
+
 // SST: Red (3v3); Green (GRN); Blue (A0)
 // Note: D7 (blue led light) will light when water=true (analogRead(sr1) < 100)
 
+#define ARDUINOJSON_ENABLE_ARDUINO_STRING 1
+// This #include statement was automatically added by the Particle IDE.
+#include <ArduinoJson.h>
+
+/*Create variables for sensor and analog values */ 
 int sr1 = A0;
-int analogValue = 0;
-int sr2 = D7;
+double analogValue = 0; 
+String mydevID = System.deviceID();
 
 void setup() {
-    pinMode(sr1, INPUT);
-    pinMode(sr2, OUTPUT);
+    Particle.variable("analogValue", analogValue);
+    Particle.subscribe("hook-response/waterSensor", myHandler, MY_DEVICES);
+    pinMode(sr1, INPUT); 
+    pinMode(D7, OUTPUT); 
     
-    Serial.begin(9600);
-   // Particle.publish("SST:");
+    Serial.begin(9600); 
+    Particle.publish("status", "entering loop"); 
 }
 
- void loop() {
-   analogValue = analogRead(sr1);
-   //Particle.publish("4value", analogValue); 
-    delay(1000);
-    Serial.print(sr1);
+void myHandler(const char *event, const char *data) {
+  // Handle the integration response
+}
+
+void loop() {
+    const size_t capacity = JSON_ARRAY_SIZE(8) + JSON_OBJECT_SIZE(16) + 30;
+    DynamicJsonDocument jsondata(capacity);
+    
+     // Timestamp
+        // Time.zone(-6);  // Central Time
+        Time.zone(0);  // UTC - Needed for Chords
+        time_t time = Time.now();
+        String timeStamp = Time.format(time, TIME_FORMAT_ISO8601_FULL);
+    
+    bool wetState; 
+    
+    String data;
+    
+    //Addition of variables
+    // jsondata["latitude"] = 40;
+    // jsondata["longitude"] = -70;
+    // jsondata["water_height"] = 6;
+    analogValue = analogRead(sr1);
+    
+    jsondata["data_raw"] = analogValue; 
+    jsondata["data_calc"] = (analogValue/4096)*(3.3); 
+    jsondata["sensor_id"] = mydevID; 
+    jsondata["at"] = timeStamp;
+    // Particle.publish("value", String(analogValue)); 
+    delay(7000); 
+    Serial.print(sr1); 
     if(analogValue < 100){
-        digitalWrite(D7, HIGH);   
+        digitalWrite(D7, HIGH);
+        wetState = 1; 
     }else{
         digitalWrite(D7, LOW);
+        wetState = 0; 
     }
-    delay(7000);
-   // Particle.publish("SST:", digitalValue, PRIVATE);
+    // jsondata["wet"] = wetState; 
+    // jsondata["Device_ID"] = mydevID;
+    
+    // String data;
+    serializeJson(jsondata, data);
+    Particle.publish("waterSensor", data);
+    delay(7000); 
 }
